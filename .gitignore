@@ -1,0 +1,9 @@
+node_modules
+dist
+dist-deploy
+.DS_Store
+tmp
+output
+.playwright-cli
+.vercel
+.env*

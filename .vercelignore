@@ -1,0 +1,10 @@
+node_modules
+dist
+dist-deploy
+.playwright-cli
+tmp
+output
+.git
+.DS_Store
+.env*
+*.log
