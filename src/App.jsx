@@ -24,6 +24,36 @@ const contact = {
 
 const asset = (path) => `${import.meta.env.BASE_URL}${path}`;
 
+function DeferredVideo({ src, ...props }) {
+  const videoRef = useRef(null);
+  const [shouldLoad, setShouldLoad] = useState(false);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return undefined;
+
+    if (!("IntersectionObserver" in window)) {
+      setShouldLoad(true);
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShouldLoad(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "240px 0px", threshold: 0.01 },
+    );
+
+    observer.observe(video);
+    return () => observer.disconnect();
+  }, []);
+
+  return <video ref={videoRef} src={shouldLoad ? src : undefined} preload="none" {...props} />;
+}
+
 const navItems = [
   { label: "关于我", href: "#about" },
   { label: "工作经历", href: "#experience" },
@@ -863,14 +893,13 @@ function Portfolio() {
               <>
                 {project.cardVideo ? (
                   <div className="project-list-cover">
-                    <video
+                    <DeferredVideo
                       src={project.cardVideo}
                       aria-label={project.cardVideoAlt}
                       autoPlay
                       muted
                       loop
                       playsInline
-                      preload="metadata"
                     />
                     <span className="project-cover-index">0{index + 1}</span>
                     <span className="project-open">
@@ -879,7 +908,13 @@ function Portfolio() {
                   </div>
                 ) : project.cardImage ? (
                   <div className="project-list-cover">
-                    <img src={project.cardImage} alt={project.cardImageAlt} loading="lazy" />
+                    <img
+                      src={project.cardImage}
+                      alt={project.cardImageAlt}
+                      loading="lazy"
+                      decoding="async"
+                      fetchPriority="low"
+                    />
                     <span className="project-cover-index">0{index + 1}</span>
                     <span className="project-open">
                       Open project <ArrowUpRight size={15} aria-hidden="true" />
@@ -998,7 +1033,7 @@ function ProjectDetail({ project }) {
                 })
               }
             >
-              <video src={featuredVideo.src} autoPlay muted loop playsInline preload="metadata" />
+              <DeferredVideo src={featuredVideo.src} autoPlay muted loop playsInline />
               <span>FEATURED VIDEO / 代表视频</span>
             </button>
           </figure>
@@ -1017,7 +1052,7 @@ function ProjectDetail({ project }) {
                 })
               }
             >
-              <img src={project.cover} alt={`${project.titleZh}封面视觉`} />
+              <img src={project.cover} alt={`${project.titleZh}封面视觉`} decoding="async" />
             </button>
           </figure>
         ) : null}
@@ -1058,7 +1093,7 @@ function ProjectDetail({ project }) {
                         })
                       }
                     >
-                      <video src={video.src} autoPlay muted loop playsInline preload="metadata" />
+                      <DeferredVideo src={video.src} autoPlay muted loop playsInline />
                     </button>
                     <figcaption>
                       <span>{String(index + 1).padStart(2, "0")}</span>
@@ -1109,12 +1144,14 @@ function ProjectDetail({ project }) {
                       }
                     >
                       {image.type === "video" ? (
-                        <video src={image.src} autoPlay muted loop playsInline preload="metadata" />
+                        <DeferredVideo src={image.src} autoPlay muted loop playsInline />
                       ) : (
                         <img
                           src={image.src}
                           alt={`${collection.titleZh}${image.labelZh}`}
-                          loading={collectionIndex === 0 && imageIndex === 0 ? "eager" : "lazy"}
+                          loading="lazy"
+                          decoding="async"
+                          fetchPriority="low"
                         />
                       )}
                     </button>
@@ -1139,7 +1176,7 @@ function ProjectDetail({ project }) {
             {activeMedia.type === "video" ? (
               <video src={activeMedia.src} aria-label={activeMedia.alt} controls autoPlay playsInline />
             ) : (
-              <img src={activeMedia.src} alt={activeMedia.alt} />
+              <img src={activeMedia.src} alt={activeMedia.alt} decoding="async" />
             )}
             <figcaption>
               <strong>{activeMedia.title}</strong>
