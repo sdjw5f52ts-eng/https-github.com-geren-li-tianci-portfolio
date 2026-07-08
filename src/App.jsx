@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowUp,
+  ArrowUpRight,
   Braces,
   Contact,
   Grid3X3,
@@ -22,6 +23,36 @@ const contact = {
 };
 
 const asset = (path) => `${import.meta.env.BASE_URL}${path}`;
+
+function DeferredVideo({ src, ...props }) {
+  const videoRef = useRef(null);
+  const [shouldLoad, setShouldLoad] = useState(false);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return undefined;
+
+    if (!("IntersectionObserver" in window)) {
+      setShouldLoad(true);
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShouldLoad(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "240px 0px", threshold: 0.01 },
+    );
+
+    observer.observe(video);
+    return () => observer.disconnect();
+  }, []);
+
+  return <video ref={videoRef} src={shouldLoad ? src : undefined} preload="none" {...props} />;
+}
 
 const navItems = [
   { label: "关于我", href: "#about" },
@@ -135,11 +166,12 @@ const workflow = [
   { en: "Final Output", zh: "最终输出" },
 ];
 
-const makeGalleryImages = (prefix, count, labelEn, labelZh) =>
+const makeGalleryImages = (prefix, count, labelEn, labelZh, extension = "jpg", portrait = false, fileStart = 1) =>
   Array.from({ length: count }, (_, index) => ({
-    src: asset(`assets/${prefix}-${String(index + 1).padStart(2, "0")}.jpg`),
+    src: asset(`assets/${prefix}-${String(index + fileStart).padStart(2, "0")}.${extension}`),
     labelEn: `${labelEn} ${String(index + 1).padStart(2, "0")}`,
     labelZh: `${labelZh} ${String(index + 1).padStart(2, "0")}`,
+    portrait,
   }));
 
 const makeGalleryVideos = (prefix, count, labelEn, labelZh) =>
@@ -164,10 +196,10 @@ const aiVisualExperimentProject = {
   titleZh: "AI 视觉实验",
   metaEn: "AIGC / Prompt / Render",
   metaZh: "AIGC / 提示词 / 渲染",
-  copy: "围绕东方场景、奇幻生物与赛博城市进行 AI 视觉探索，验证不同题材下的场景氛围、角色设定与镜头叙事表达。",
-  cover: asset("assets/project-ai-showcase.jpg"),
-  cardImage: asset("assets/project-ai-showcase.jpg"),
-  cardImageAlt: "AI视觉实验赛博夜城展示图",
+  copy: "围绕东方叙事、幻想角色、机甲人物与未来建筑进行 AI 视觉探索，验证不同题材下的场景氛围与镜头叙事表达。",
+  cover: asset("assets/project-molyn-cover.jpg"),
+  cardImage: asset("assets/project-molyn-cover.jpg"),
+  cardImageAlt: "AI视觉实验东方场景展示图",
   tags: ["AIGC Scene", "Prompt Render", "Character Mood"],
   collections: [
     {
@@ -211,55 +243,79 @@ const aiVisualExperimentProject = {
       images: makeGalleryImages("project-ai-dragon", 7, "Dragon Visual", "龙焰视觉"),
     },
     {
-      titleEn: "Eastern Wonderland",
-      titleZh: "东方仙境",
-      metaEn: "Landscape / Pavilion / Atmosphere",
-      metaZh: "山水 / 楼阁 / 氛围",
-      copy: "以雾气、松树、楼阁与浅色山水为主体，探索更轻盈的东方幻想场景。",
-      cover: asset("assets/project-ai-wonderland-cover.jpg"),
-      images: makeGalleryImages("project-ai-wonderland", 5, "Wonderland Visual", "仙境视觉"),
+      titleEn: "Crystal Vanguard",
+      titleZh: "晶铠幻象",
+      metaEn: "Fantasy Character / Crystal Armor / Detail",
+      metaZh: "幻想角色 / 晶体铠甲 / 细节",
+      copy: "以晶体、银色机械结构与幻想人物为核心，探索高光材质、冷色氛围和角色特写的视觉表现。",
+      cover: asset("assets/project-ai-crystal-01.png"),
+      images: makeGalleryImages("project-ai-crystal", 5, "Crystal Character", "晶铠角色", "png"),
     },
     {
-      titleEn: "Cyber Night City",
-      titleZh: "赛博夜城",
-      metaEn: "Cyberpunk / City / Character",
-      metaZh: "赛博朋克 / 城市 / 角色",
-      copy: "以霓虹街区、未来角色与机械设定为核心，探索高对比色彩与城市叙事。",
-      cover: asset("assets/project-ai-cyber-cover.jpg"),
-      images: makeGalleryImages("project-ai-cyber", 5, "Cyber Visual", "赛博视觉"),
+      titleEn: "Zero Pilot",
+      titleZh: "零号机师",
+      metaEn: "Mecha / Cockpit / Character",
+      metaZh: "机甲 / 驾驶舱 / 角色",
+      copy: "围绕未来驾驶员、机甲座舱与高饱和霓虹光线，构建具有动画感的科幻角色系列。",
+      cover: asset("assets/project-ai-pilot-01.png"),
+      images: makeGalleryImages("project-ai-pilot", 4, "Pilot Visual", "机师视觉", "png"),
+    },
+    {
+      titleEn: "Abyss Megastructure",
+      titleZh: "环城深渊",
+      metaEn: "Megastructure / Sci-Fi City / Scale",
+      metaZh: "巨构建筑 / 科幻城市 / 尺度",
+      copy: "以环形城市、垂直深井与巨型建筑空间为主体，测试宏大尺度、空间纵深与末世工业氛围。",
+      cover: asset("assets/project-ai-abyss-01.png"),
+      images: makeGalleryImages("project-ai-abyss", 4, "Abyss City", "深渊城市", "png"),
+    },
+    {
+      titleEn: "Tidal Metropolis",
+      titleZh: "潮汐幻城",
+      metaEn: "Oriental City / Coast / Illustration",
+      metaZh: "东方城市 / 海岸 / 插画",
+      copy: "将东方建筑、现代城市与海岸浪潮结合，探索青绿色调、云海光影与竖幅场景插画。",
+      cover: asset("assets/project-ai-tide-01.png"),
+      images: makeGalleryImages("project-ai-tide", 3, "Tidal City", "潮汐城市", "png", true),
     },
   ],
 };
 
 const posterDesignProject = {
   path: "/projects/poster-design",
-  categoryEn: "Poster Design",
-  categoryZh: "海报设计",
-  portfolioTitleEn: "Poster Design",
-  portfolioTitleZh: "海报设计",
+  categoryEn: "Graphic Design",
+  categoryZh: "平面设计",
+  portfolioTitleEn: "Graphic Design",
+  portfolioTitleZh: "平面设计",
   portfolioMetaEn: "Graphic / Layout / Type",
   portfolioMetaZh: "平面 / 版式 / 字体",
-  titleEn: "Poster Design",
-  titleZh: "海报设计",
+  titleEn: "Graphic Design",
+  titleZh: "平面设计",
   metaEn: "Graphic / Layout / Type",
   metaZh: "平面 / 版式 / 字体",
-  copy: "以中国神兽与东方纸本文理为核心，进行海报系统、视觉符号、版式层级与实体物料场景的设计探索。",
-  cover: asset("assets/project-poster-design-cover.jpg"),
-  cardImage: asset("assets/project-poster-design-cover.jpg"),
-  cardImageAlt: "中国神兽海报设计展示图",
-  tags: ["Poster Design", "Editorial Layout", "Chinese Mythical Creatures"],
+  copy: "收录 Logo 识别、品牌视觉、运营海报与主题平面设计，呈现从视觉符号到传播场景的多类型设计实践。",
+  cover: asset("assets/project-graphic-collection-01.jpg"),
+  cardImage: asset("assets/project-graphic-collection-01.jpg"),
+  cardImageAlt: "平面视觉设计合集展示图",
+  tags: ["Logo Design", "Poster Design", "Campaign Visual"],
   collections: [
     {
-      titleEn: "Chinese Mythical Creatures",
-      titleZh: "中国神兽海报",
-      metaEn: "Poster / Layout / Oriental Graphics",
-      metaZh: "海报 / 版式 / 东方图形",
-      copy: "围绕神兽插画、纸张肌理、中文竖排与中英混排，探索东方气质的系列海报与物料展示。",
-      cover: asset("assets/project-poster-design-cover.jpg"),
-      images: makeGalleryImages("project-poster-design", 9, "Poster Visual", "海报视觉").map((image) => ({
-        ...image,
-        portrait: true,
-      })),
+      titleEn: "Graphic Design Collection",
+      titleZh: "平面视觉设计合集",
+      metaEn: "Logo / Poster / Campaign",
+      metaZh: "标志 / 海报 / 传播视觉",
+      copy: "涵盖 Logo 方案、品牌图形、运营海报与主题视觉延展，以不同风格的版式、字体和图像语言完成多场景平面表达。",
+      cover: asset("assets/project-graphic-collection-01.jpg"),
+      images: makeGalleryImages("project-graphic-collection", 10, "Graphic Visual", "平面视觉"),
+    },
+    {
+      titleEn: "Poster Design Studies",
+      titleZh: "海报设计练习",
+      metaEn: "Poster / Typography / Layout",
+      metaZh: "海报 / 字体 / 版式",
+      copy: "围绕字体层级、几何图形、插画元素与色彩对比进行海报实验，探索不同主题下的版式节奏与视觉语言。",
+      cover: asset("assets/project-graphic-posters-01.jpg"),
+      images: makeGalleryImages("project-graphic-posters", 5, "Poster Study", "海报练习"),
     },
   ],
 };
@@ -276,23 +332,29 @@ const brandProductProject = {
   titleZh: "品牌产品视觉",
   metaEn: "Brand / Product / Campaign",
   metaZh: "品牌 / 产品 / Campaign",
-  copy: "围绕茶饮品牌包装、产品陈列、视觉物料与场景化摄影感构图，探索品牌产品视觉从包装到传播图的完整呈现。",
-  cover: asset("assets/project-brand-design-cover.jpg"),
-  cardImage: asset("assets/project-brand-design-cover.jpg"),
-  cardImageAlt: "怡心茶包装品牌产品视觉展示图",
-  tags: ["Brand Design", "Packaging Visual", "Product Campaign"],
+  copy: "收录茉林 Molyn 香氛品牌与“不期而遇的夏天”插画视觉项目，涵盖品牌概念、包装系统、主题插画与场景化展示。",
+  cover: asset("assets/project-brand-molyn-01.jpg"),
+  cardImage: asset("assets/project-brand-molyn-01.jpg"),
+  cardImageAlt: "茉林 Molyn 香氛品牌设计展示图",
+  tags: ["Brand Identity", "Packaging Design", "Illustration", "Campaign Visual"],
   collections: [
     {
-      titleEn: "Yixin Tea Packaging",
-      titleZh: "怡心茶包装",
-      metaEn: "Packaging / Product / Visual System",
-      metaZh: "包装 / 产品 / 视觉系统",
-      copy: "以茶盒包装、月饼产品、自然道具与柔和色彩为核心，呈现东方茶饮品牌的产品视觉体系。",
-      cover: asset("assets/project-brand-design-cover.jpg"),
-      images: makeGalleryImages("project-brand-design", 10, "Brand Visual", "品牌视觉").map((image) => ({
-        ...image,
-        portrait: true,
-      })),
+      titleEn: "Molyn Fragrance Branding",
+      titleZh: "茉林香氛品牌",
+      metaEn: "Brand Identity / Packaging / Product Visual",
+      metaZh: "品牌识别 / 包装 / 产品视觉",
+      copy: "以自然绿色、香氛产品与生活方式场景为核心，建立从品牌概念、包装延展到产品陈列的完整视觉表达。",
+      cover: asset("assets/project-brand-molyn-01.jpg"),
+      images: makeGalleryImages("project-brand-molyn", 10, "Molyn Brand Visual", "茉林品牌视觉"),
+    },
+    {
+      titleEn: "A Summer Encounter",
+      titleZh: "不期而遇的夏天",
+      metaEn: "Illustration / Campaign / Visual Extension",
+      metaZh: "插画 / 主题企划 / 视觉延展",
+      copy: "以夏日奇幻生活为主题，将自然、松弛生活与童话元素融合，完成从概念探索、插画绘制到户外视觉延展的完整项目。",
+      cover: asset("assets/project-brand-summer-02.jpg"),
+      images: makeGalleryImages("project-brand-summer", 8, "Summer Campaign", "夏日企划视觉", "jpg", false, 2),
     },
   ],
 };
@@ -309,21 +371,30 @@ const videoCreativeProject = {
   titleZh: "视频创意",
   metaEn: "Motion / AI Video / Story",
   metaZh: "动态 / AI 视频 / 叙事",
-  copy: "以 AI 视频生成、镜头节奏、场景运动与视觉叙事为核心，探索短片式动态视觉和平台传播素材的生成方法。",
-  cover: asset("assets/project-video-creative-01.mp4"),
+  copy: "收录 SP 动态影像作品，涵盖竖屏短片与横屏视觉实验，展示镜头节奏、场景运动和氛围塑造。",
+  cover: asset("assets/project-video-sp-01.mp4"),
   coverType: "video",
-  cardVideo: asset("assets/project-video-creative-01.mp4"),
-  cardVideoAlt: "视频创意 AI 动态视觉展示",
-  tags: ["AI Video", "Motion Design", "Visual Story"],
+  cardVideo: asset("assets/project-video-sp-01.mp4"),
+  cardVideoAlt: "SP 动态影像作品展示",
+  tags: ["Motion Visual", "Short Video", "Visual Story"],
   collections: [
     {
-      titleEn: "AI Motion Study",
-      titleZh: "AI 动态视觉实验",
-      metaEn: "AI Video / Motion / Narrative",
-      metaZh: "AI 视频 / 动态 / 叙事",
-      copy: "将视频生成片段整理为动态视觉作品组，展示人物、场景、镜头运动与氛围塑造的不同尝试。",
-      cover: asset("assets/project-video-creative-01.mp4"),
-      images: makeGalleryVideos("project-video-creative", 10, "Motion Visual", "动态视觉"),
+      titleEn: "SP Motion Collection",
+      titleZh: "SP 动态影像合集",
+      metaEn: "Motion / Short Video / Visual Experiment",
+      metaZh: "动态 / 短片 / 视觉实验",
+      copy: "将不同画幅的动态影像整理为完整作品组，保留竖屏与横屏原始比例，呈现场景、人物和镜头运动的多样尝试。",
+      cover: asset("assets/project-video-sp-01.mp4"),
+      images: [
+        { type: "video", src: asset("assets/project-video-sp-01.mp4"), labelEn: "SP Motion 01", labelZh: "SP 动态影像 01", portrait: true },
+        { type: "video", src: asset("assets/project-video-sp-02.mp4"), labelEn: "SP Motion 02", labelZh: "SP 动态影像 02", portrait: true },
+        { type: "video", src: asset("assets/project-video-sp-03.mp4"), labelEn: "SP Motion 03", labelZh: "SP 动态影像 03", portrait: true },
+        { type: "video", src: asset("assets/project-video-sp-04.mp4"), labelEn: "SP Motion 04", labelZh: "SP 动态影像 04", portrait: false },
+        { type: "video", src: asset("assets/project-video-sp-05.mp4"), labelEn: "SP Motion 05", labelZh: "SP 动态影像 05", portrait: false },
+        { type: "video", src: asset("assets/project-video-sp-06.mp4"), labelEn: "SP Motion 06", labelZh: "SP 动态影像 06", portrait: true },
+        { type: "video", src: asset("assets/project-video-sp-07.mp4"), labelEn: "SP Motion 07", labelZh: "SP 动态影像 07", portrait: true },
+        { type: "video", src: asset("assets/project-video-sp-08.mp4"), labelEn: "SP Motion 08", labelZh: "SP 动态影像 08", portrait: false },
+      ],
     },
   ],
 };
@@ -365,6 +436,10 @@ function App() {
       window.removeEventListener("popstate", updateRoutePath);
     };
   }, []);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [routePath]);
 
   if (currentDetailProject) {
     return (
@@ -791,6 +866,8 @@ function Workflow() {
 }
 
 function Portfolio() {
+  const layoutClasses = ["is-primary", "is-secondary", "is-secondary", "is-primary"];
+
   return (
     <section className="screen portfolio-screen" id="portfolio">
       <div className="shell">
@@ -798,27 +875,50 @@ function Portfolio() {
           <span className="section-kicker">Portfolio Preview / 004</span>
           <BilingualTitle zh="作品展示" en="Portfolio Preview" />
         </div>
+        <div className="portfolio-intro" data-reveal>
+          <p>
+            从 AI 生成实验到品牌与动态内容，以视觉叙事、信息层级和完整交付为核心，
+            呈现不同媒介中的设计探索。
+          </p>
+          <div className="portfolio-disciplines" aria-label="作品类型">
+            <span>AIGC</span>
+            <span>Graphic</span>
+            <span>Brand</span>
+            <span>Motion</span>
+          </div>
+        </div>
         <div className="project-grid">
           {projects.map((project, index) => {
             const cardBody = (
               <>
                 {project.cardVideo ? (
                   <div className="project-list-cover">
-                    <video
+                    <DeferredVideo
                       src={project.cardVideo}
                       aria-label={project.cardVideoAlt}
                       autoPlay
                       muted
                       loop
                       playsInline
-                      preload="metadata"
                     />
-                    <span>OPEN PROJECT / 点击进入项目页</span>
+                    <span className="project-cover-index">0{index + 1}</span>
+                    <span className="project-open">
+                      Open project <ArrowUpRight size={15} aria-hidden="true" />
+                    </span>
                   </div>
                 ) : project.cardImage ? (
                   <div className="project-list-cover">
-                    <img src={project.cardImage} alt={project.cardImageAlt} loading="lazy" />
-                    <span>OPEN PROJECT / 点击进入项目页</span>
+                    <img
+                      src={project.cardImage}
+                      alt={project.cardImageAlt}
+                      loading="lazy"
+                      decoding="async"
+                      fetchPriority="low"
+                    />
+                    <span className="project-cover-index">0{index + 1}</span>
+                    <span className="project-open">
+                      Open project <ArrowUpRight size={15} aria-hidden="true" />
+                    </span>
                   </div>
                 ) : (
                   <div className="image-placeholder">
@@ -828,7 +928,10 @@ function Portfolio() {
                   </div>
                 )}
                 <div className="project-meta">
-                  <span>0{index + 1}</span>
+                  <div className="project-meta-heading">
+                    <span>Selected work / 0{index + 1}</span>
+                    <ArrowUpRight size={20} aria-hidden="true" />
+                  </div>
                   <h3>
                     {project.portfolioTitleEn ?? project.titleEn}
                     <em>{project.portfolioTitleZh ?? project.titleZh}</em>
@@ -837,13 +940,14 @@ function Portfolio() {
                     {project.portfolioMetaEn ?? project.metaEn}
                     <em>{project.portfolioMetaZh ?? project.metaZh}</em>
                   </p>
+                  {project.copy && <p className="project-description">{project.copy}</p>}
                 </div>
               </>
             );
 
             return project.path ? (
               <a
-                className="project-card project-card-link"
+                className={`project-card project-card-link ${layoutClasses[index]}`}
                 href={`#${project.path}`}
                 key={project.titleEn}
                 aria-label={`查看${project.titleZh}项目详情`}
@@ -868,6 +972,7 @@ function ProjectDetail({ project }) {
   const isVideoProject = project.coverType === "video";
   const heroVideos = isVideoProject ? project.collections.flatMap((collection) => collection.images) : [];
   const featuredVideo = heroVideos[0];
+  const detailTags = project.tags ?? [project.categoryZh, "AIGC Scene", "Character Mood"];
 
   useEffect(() => {
     if (!activeMedia) return undefined;
@@ -888,7 +993,12 @@ function ProjectDetail({ project }) {
   }, [activeMedia]);
 
   return (
-    <section className={`project-detail-page${project.coverType === "video" ? " is-video-detail" : ""}`} id="top">
+    <section
+      className={`project-detail-page${project.coverType === "video" ? " is-video-detail" : ""}${
+        project.path === "/projects/brand-product-visual" ? " is-brand-detail" : ""
+      }${project.path === "/projects/poster-design" ? " is-graphic-detail" : ""}`}
+      id="top"
+    >
       <div className="shell detail-hero" data-reveal>
         <div className="detail-copy">
           <a className="detail-back" href="#portfolio">
@@ -899,12 +1009,14 @@ function ProjectDetail({ project }) {
             {project.titleEn}
             <em>{project.titleZh}</em>
           </h1>
-          <p>{project.copy}</p>
-          <div className="detail-tags">
-            {(project.tags ?? [project.categoryZh, "AIGC Scene", "Character Mood"]).map((tag) => (
-              <span key={tag}>{tag}</span>
-            ))}
-          </div>
+          {project.copy && <p>{project.copy}</p>}
+          {detailTags.length > 0 && (
+            <div className="detail-tags">
+              {detailTags.map((tag) => (
+                <span key={tag}>{tag}</span>
+              ))}
+            </div>
+          )}
         </div>
         {isVideoProject && featuredVideo ? (
           <figure className="detail-video-feature">
@@ -921,11 +1033,11 @@ function ProjectDetail({ project }) {
                 })
               }
             >
-              <video src={featuredVideo.src} autoPlay muted loop playsInline preload="metadata" />
+              <DeferredVideo src={featuredVideo.src} autoPlay muted loop playsInline />
               <span>FEATURED VIDEO / 代表视频</span>
             </button>
           </figure>
-        ) : (
+        ) : project.cover ? (
           <figure className="detail-cover">
             <button
               className="detail-cover-button"
@@ -940,10 +1052,10 @@ function ProjectDetail({ project }) {
                 })
               }
             >
-              <img src={project.cover} alt={`${project.titleZh}封面视觉`} />
+              <img src={project.cover} alt={`${project.titleZh}封面视觉`} decoding="async" />
             </button>
           </figure>
-        )}
+        ) : null}
       </div>
 
       {isVideoProject && (
@@ -963,7 +1075,11 @@ function ProjectDetail({ project }) {
               </div>
               <div className="detail-video-gallery" aria-label="视频作品列表">
                 {collection.images.map((video, index) => (
-                  <figure className="detail-video-card" key={video.src} data-reveal>
+                  <figure
+                    className={`detail-video-card${video.portrait ? "" : " is-landscape"}`}
+                    key={video.src}
+                    data-reveal
+                  >
                     <button
                       className="detail-video-card-trigger"
                       type="button"
@@ -977,7 +1093,7 @@ function ProjectDetail({ project }) {
                         })
                       }
                     >
-                      <video src={video.src} autoPlay muted loop playsInline preload="metadata" />
+                      <DeferredVideo src={video.src} autoPlay muted loop playsInline />
                     </button>
                     <figcaption>
                       <span>{String(index + 1).padStart(2, "0")}</span>
@@ -1028,12 +1144,14 @@ function ProjectDetail({ project }) {
                       }
                     >
                       {image.type === "video" ? (
-                        <video src={image.src} autoPlay muted loop playsInline preload="metadata" />
+                        <DeferredVideo src={image.src} autoPlay muted loop playsInline />
                       ) : (
                         <img
                           src={image.src}
                           alt={`${collection.titleZh}${image.labelZh}`}
-                          loading={collectionIndex === 0 && imageIndex === 0 ? "eager" : "lazy"}
+                          loading="lazy"
+                          decoding="async"
+                          fetchPriority="low"
                         />
                       )}
                     </button>
@@ -1058,7 +1176,7 @@ function ProjectDetail({ project }) {
             {activeMedia.type === "video" ? (
               <video src={activeMedia.src} aria-label={activeMedia.alt} controls autoPlay playsInline />
             ) : (
-              <img src={activeMedia.src} alt={activeMedia.alt} />
+              <img src={activeMedia.src} alt={activeMedia.alt} decoding="async" />
             )}
             <figcaption>
               <strong>{activeMedia.title}</strong>
